@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Eliminar Cuenta - App Animes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Firebase SDK -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
@@ -22,16 +21,13 @@
       height: 100vh;
       text-align: center;
     }
-
     h2 {
       color: #ff4c4c;
     }
-
     p {
       max-width: 400px;
       margin-bottom: 30px;
     }
-
     button {
       background-color: #ff4c4c;
       color: white;
@@ -41,24 +37,26 @@
       font-size: 16px;
       cursor: pointer;
       transition: background-color 0.3s ease;
+      margin: 10px;
     }
-
     button:hover {
       background-color: #e03b3b;
     }
-
     .message {
       margin-top: 20px;
       font-size: 14px;
       color: #ccc;
+      min-height: 24px;
     }
   </style>
 </head>
 <body>
-
   <h2>Eliminar cuenta</h2>
   <p>Al hacer clic en el botón, se eliminará tu cuenta de App Animes y todos tus datos asociados.</p>
-  <button onclick="eliminarCuenta()">Eliminar mi cuenta</button>
+
+  <button id="loginBtn">Iniciar sesión</button>
+  <button id="deleteBtn" disabled>Eliminar mi cuenta</button>
+
   <div class="message" id="msg"></div>
 
   <script>
@@ -71,40 +69,49 @@
 
     firebase.initializeApp(firebaseConfig);
 
-    const msg = document.getElementById("msg");
+    const msg = document.getElementById('msg');
+    const loginBtn = document.getElementById('loginBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
 
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) {
-        msg.innerText = "Autenticando...";
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
-          .then(() => msg.innerText = "")
-          .catch(error => {
-            msg.innerText = "Error al iniciar sesión: " + error.message;
-          });
-      }
+    loginBtn.addEventListener('click', () => {
+      firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      .then(() => {
+        msg.innerText = "✅ Sesión iniciada correctamente.";
+        loginBtn.disabled = true;
+        deleteBtn.disabled = false;
+      })
+      .catch(error => {
+        msg.innerText = "Error al iniciar sesión: " + error.message;
+      });
     });
 
-    function eliminarCuenta() {
+    deleteBtn.addEventListener('click', () => {
       const user = firebase.auth().currentUser;
       if (user) {
         const uid = user.uid;
+        msg.innerText = "Eliminando cuenta y datos...";
 
-        // 1. Eliminar datos de la base de datos
-        firebase.database().ref("Usuarios/" + uid).remove().then(() => {
-          // 2. Eliminar usuario de Firebase Auth
-          user.delete().then(() => {
+        firebase.database().ref("Usuarios/" + uid).remove()
+          .then(() => user.delete())
+          .then(() => {
             msg.innerText = "✅ Tu cuenta y datos han sido eliminados correctamente.";
-          }).catch(error => {
-            msg.innerText = "⚠️ Vuelve a iniciar sesión para poder eliminar tu cuenta.";
-            console.error(error);
+            deleteBtn.disabled = true;
+            loginBtn.disabled = false;
+          })
+          .catch(error => {
+            if (error.code === 'auth/requires-recent-login') {
+              msg.innerText = "⚠️ Necesitas iniciar sesión nuevamente para eliminar tu cuenta.";
+              loginBtn.disabled = false;
+              deleteBtn.disabled = true;
+            } else {
+              msg.innerText = "Error: " + error.message;
+            }
           });
-        }).catch(error => {
-          msg.innerText = "❌ Error al eliminar tus datos: " + error.message;
-        });
       } else {
-        msg.innerText = "⚠️ No hay ninguna sesión activa.";
+        msg.innerText = "⚠️ No hay sesión activa.";
       }
-    }
+    });
   </script>
 </body>
 </html>
+
