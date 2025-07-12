@@ -24,9 +24,13 @@
     h2 {
       color: #ff4c4c;
     }
-    p {
-      max-width: 400px;
-      margin-bottom: 30px;
+    input {
+      margin: 6px 0;
+      padding: 8px;
+      width: 250px;
+      border-radius: 4px;
+      border: none;
+      font-size: 16px;
     }
     button {
       background-color: #ff4c4c;
@@ -52,8 +56,10 @@
 </head>
 <body>
   <h2>Eliminar cuenta</h2>
-  <p>Al hacer clic en el botón, se eliminará tu cuenta de App Animes y todos tus datos asociados.</p>
+  <p>Inicia sesión con tu correo y contraseña para eliminar tu cuenta y datos.</p>
 
+  <input type="email" id="email" placeholder="Correo electrónico" />
+  <input type="password" id="password" placeholder="Contraseña" />
   <button id="loginBtn">Iniciar sesión</button>
   <button id="deleteBtn" disabled>Eliminar mi cuenta</button>
 
@@ -72,12 +78,24 @@
     const msg = document.getElementById('msg');
     const loginBtn = document.getElementById('loginBtn');
     const deleteBtn = document.getElementById('deleteBtn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
 
     loginBtn.addEventListener('click', () => {
-      firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        msg.innerText = "Por favor, ingresa correo y contraseña.";
+        return;
+      }
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
       .then(() => {
         msg.innerText = "✅ Sesión iniciada correctamente.";
         loginBtn.disabled = true;
+        emailInput.disabled = true;
+        passwordInput.disabled = true;
         deleteBtn.disabled = false;
       })
       .catch(error => {
@@ -97,6 +115,10 @@
             msg.innerText = "✅ Tu cuenta y datos han sido eliminados correctamente.";
             deleteBtn.disabled = true;
             loginBtn.disabled = false;
+            emailInput.disabled = false;
+            passwordInput.disabled = false;
+            emailInput.value = "";
+            passwordInput.value = "";
           })
           .catch(error => {
             if (error.code === 'auth/requires-recent-login') {
@@ -114,4 +136,5 @@
   </script>
 </body>
 </html>
+
 
