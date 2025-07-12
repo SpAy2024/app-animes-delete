@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Eliminar Cuenta - App Animes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #121212;
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h2 {
+      color: #ff4c4c;
+    }
+
+    p {
+      max-width: 400px;
+      margin-bottom: 30px;
+    }
+
+    button {
+      background-color: #ff4c4c;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #e03b3b;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Eliminar cuenta</h2>
+  <p>Al hacer clic en el botón, se eliminará tu cuenta de App Animes y todos tus datos asociados.</p>
+  <button onclick="eliminarCuenta()">Eliminar mi cuenta</button>
+  <div class="message" id="msg"></div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBp4gZA58XD7lkI1_yfg30bpPa1xL8lcLQ",
+      authDomain: "app-animes-63d30.firebaseapp.com",
+      databaseURL: "https://app-animes-63d30-default-rtdb.firebaseio.com",
+      projectId: "app-animes-63d30"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const msg = document.getElementById("msg");
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        msg.innerText = "Autenticando...";
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+          .then(() => msg.innerText = "")
+          .catch(error => {
+            msg.innerText = "Error al iniciar sesión: " + error.message;
+          });
+      }
+    });
+
+    function eliminarCuenta() {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        const uid = user.uid;
+
+        // 1. Eliminar datos de la base de datos
+        firebase.database().ref("Usuarios/" + uid).remove().then(() => {
+          // 2. Eliminar usuario de Firebase Auth
+          user.delete().then(() => {
+            msg.innerText = "✅ Tu cuenta y datos han sido eliminados correctamente.";
+          }).catch(error => {
+            msg.innerText = "⚠️ Vuelve a iniciar sesión para poder eliminar tu cuenta.";
+            console.error(error);
+          });
+        }).catch(error => {
+          msg.innerText = "❌ Error al eliminar tus datos: " + error.message;
+        });
+      } else {
+        msg.innerText = "⚠️ No hay ninguna sesión activa.";
+      }
+    }
+  </script>
+</body>
+</html>
